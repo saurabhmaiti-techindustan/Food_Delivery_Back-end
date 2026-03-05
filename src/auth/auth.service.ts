@@ -5,6 +5,9 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/loginUser.dto';
 import { MailService } from 'src/mail/mail.service';
+import { ForgotPasswordDto } from './dto/forgotPassword.dto';
+import * as crypto from 'crypto';
+import { ResetPasswordDto } from './dto/resetPassword.dto';
 
 @Injectable()
 export class AuthService {
@@ -12,10 +15,9 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async registerUser(registerUserDto: RegisterUserDto) {
-
     const { name, email, phone, password } = registerUserDto;
 
     const existingUser = await this.userService.findEmail(email);
@@ -64,18 +66,16 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role
-    }
+      role: user.role,
+    };
     const token = await this.jwtService.signAsync(payload);
     return {
-      message: "Email Verified Successfully",
-      accessToken: token
-    }
-
+      message: 'Email Verified Successfully',
+      accessToken: token,
+    };
   }
 
   async login(loginUserDto: LoginUserDto) {
-
     const { email, password } = loginUserDto;
 
     const user = await this.userService.findEmailWithPassword(email);
@@ -104,5 +104,49 @@ export class AuthService {
     return {
       accessToken: token,
     };
+  }
+
+  async forgetPassword(forgetPasswordDto: ForgotPasswordDto) {
+    const user = await this.userService.findEmail(forgetPasswordDto.email);
+    if (!user) {
+      throw new BadRequestException('Email not found ');
+    }
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 15);
+    user.passwordResetToken = token;
+    user.passwordResetExpireAt = expiry;
+    await this.userService.save(user);
+    const resetLink = `http://localhost:3000/auth/reset-password?token=${token}`;
+    await this.mailService.sendPasswordResetLink(
+      forgetPasswordDto.email,
+      resetLink,
+    );
+    return {
+      message: 'Password reset link sent to email',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const user = await this.userService.findPasswordResetToken(
+      resetPasswordDto.token,
+    );
+    if (!user) {
+      throw new BadRequestException('Invalid Token');
+    }
+    if (
+      !user.passwordResetExpireAt ||
+      user.passwordResetExpireAt < new Date()
+    ) {
+      throw new BadRequestException('Token expired');
+    }
+    const newHashedPassword=await bcrypt.hash(resetPasswordDto.newPassword,10);
+    user.password=newHashedPassword;
+    user.passwordResetToken=null;
+    user.passwordResetExpireAt=null;
+    await this.userService.save(user);
+    return {
+      message:"Password Reset successfully"
+    }
   }
 }

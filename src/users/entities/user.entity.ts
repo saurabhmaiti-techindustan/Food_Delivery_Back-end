@@ -45,7 +45,7 @@ export class UserEntity {
   emailOtpExpiry: Date | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  passwordResetToken: string;
+  passwordResetToken: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   passwordResetExpireAt: Date | null;

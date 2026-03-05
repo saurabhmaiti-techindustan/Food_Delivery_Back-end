@@ -25,4 +25,10 @@ export class UsersService {
             .addSelect('user.password')
             .getOne();
     }
+
+    async findPasswordResetToken(token:string){
+        return this.userRepository.findOne({
+            where:{passwordResetToken:token}
+        })
+    }   
 }
