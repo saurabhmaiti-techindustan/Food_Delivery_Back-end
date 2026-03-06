@@ -1,4 +1,5 @@
 import { UserRole } from 'src/common/enums/user-role.enum';
+import { RestaurantEntity } from 'src/restaurants/entities/restaurant.entity';
 import {
   Column,
   CreateDateColumn,
@@ -6,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
 
 @Entity('users')
@@ -55,4 +57,6 @@ export class UserEntity {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+  @OneToMany(() => RestaurantEntity, (restaurant) => restaurant.owner)
+  restaurants: RestaurantEntity[];
 }
