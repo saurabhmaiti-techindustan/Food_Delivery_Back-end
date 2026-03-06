@@ -8,6 +8,7 @@ import { MailService } from 'src/mail/mail.service';
 import { ForgotPasswordDto } from './dto/forgotPassword.dto';
 import * as crypto from 'crypto';
 import { ResetPasswordDto } from './dto/resetPassword.dto';
+import { SendOtp } from 'src/common/send_otp/sendOtp';
 
 @Injectable()
 export class AuthService {
@@ -28,9 +29,9 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const sendOtp = new SendOtp();
+    const otp = sendOtp.generateOtp();
+    const otpExpiry = sendOtp.optExpiry();
 
     const user = await this.userService.createUser({
       name,
@@ -83,7 +84,9 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException('Invalid credentials');
     }
-
+    if (!user.isEmailVerified) {
+      throw new BadRequestException('Please verify your email first');
+    }
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
