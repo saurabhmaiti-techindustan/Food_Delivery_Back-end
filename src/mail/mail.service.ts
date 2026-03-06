@@ -22,7 +22,7 @@ export class MailService {
     });
   }
 
-    async sendPasswordResetLink(email: string, resetLink: string) {
+  async sendPasswordResetLink(email: string, resetLink: string) {
     const transporter = nodemailer.createTransport({
       host: this.config.get('MAIL_HOST'),
       port: this.config.get('MAIL_PORT'),

@@ -140,13 +140,16 @@ export class AuthService {
     ) {
       throw new BadRequestException('Token expired');
     }
-    const newHashedPassword=await bcrypt.hash(resetPasswordDto.newPassword,10);
-    user.password=newHashedPassword;
-    user.passwordResetToken=null;
-    user.passwordResetExpireAt=null;
+    const newHashedPassword = await bcrypt.hash(
+      resetPasswordDto.newPassword,
+      10,
+    );
+    user.password = newHashedPassword;
+    user.passwordResetToken = null;
+    user.passwordResetExpireAt = null;
     await this.userService.save(user);
     return {
-      message:"Password Reset successfully"
-    }
+      message: 'Password Reset successfully',
+    };
   }
 }
